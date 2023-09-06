@@ -36,6 +36,7 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
   // 更新相机
   camera.aspect = sizes.width / sizes.height;
+  // 更新摄像机投影矩阵。在任何参数被改变以后必须被调用。
   camera.updateProjectionMatrix();
 });
 
