@@ -47,6 +47,7 @@ const tick = () => {
   // 给网格模型添加一个转动动画
   mesh && (mesh.rotation.y += .02);
   mesh && (mesh.rotation.x += .02);
+  mesh && (mesh.rotation.z += .02);
   // 页面重绘时调用自身
   window.requestAnimationFrame(tick);
 }

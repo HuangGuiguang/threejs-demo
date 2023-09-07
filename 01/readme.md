@@ -101,3 +101,32 @@ body {
         camera.updateProjectionMatrix();
     });
     ```
+4. 添加网格对象mesh(网格)
+```js
+// BoxGeometry是四边形的原始几何类，它通常使用构造函数所提供的“width”、“height”、“depth”参数来创建立方体或者不规则四边形。
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+// 基础网格材质(MeshBasicMaterial)
+// 一个以简单着色（平面或线框）方式来绘制几何体的材质。
+const material = new THREE.MeshBasicMaterial({ color: 0x03c03c });
+
+/**
+ * 网格（Mesh）
+表示基于以三角形为polygon mesh（多边形网格）的物体的类。 同时也作为其他类的基类，例如SkinnedMesh。
+ */
+const mesh = new THREE.Mesh(geometry, material);
+scene.add(mesh);
+```
+
+5. 根据需求，添加动画效果(这里就是旋转)
+```js
+const tick = () => {
+  // 更新渲染器
+  renderer.render(scene, camera);
+  // 给网格模型添加一个转动动画
+  mesh && (mesh.rotation.y += .02);
+  mesh && (mesh.rotation.x += .02);
+  // 页面重绘时调用自身
+  window.requestAnimationFrame(tick);
+}
+tick();
+```
