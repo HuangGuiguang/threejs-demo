@@ -25,7 +25,7 @@ body {
   scroll-behavior: smooth;
   overscroll-behavior: none;
   color: #fff;
-  overflow: hidden auto;
+  overflow: hidden;
 }
 .shadow_page .github {
   position: fixed;

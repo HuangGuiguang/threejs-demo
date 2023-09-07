@@ -28,3 +28,8 @@ const loader = new THREE.OBJLoader( manager );
 loader.load('file.obj', function (object) {});
 
 ```
+
+## three使用右手坐标系
+指向天的是y轴，右手方向是x轴，z方向是由屏幕射出来的方向
+
+## 2π = 180°

@@ -1,5 +1,5 @@
 import './style.css';
-import { Clock, Scene, LoadingManager, WebGLRenderer, sRGBEncoding, Group, PerspectiveCamera, DirectionalLight, PointLight, MeshPhongMaterial } from 'three';
+import { Clock, Scene, LoadingManager, WebGLRenderer, sRGBEncoding, Group, PerspectiveCamera, DirectionalLight, PointLight, MeshPhongMaterial, AmbientLight } from 'three';
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -10,10 +10,6 @@ let oldMaterial;
 let width = section.clientWidth;
 let height = section.clientHeight;
 
-// 初始化两个渲染器
-// antialias - 是否执行抗锯齿。默认为false.
-// alpha - controls the default clear alpha value. When set to true, the value is 0. Otherwise it's 1. Default is false.
-// powerPreference - 提示用户代理怎样的配置更适用于当前WebGL环境。 可能是"high-performance", "low-power" 或 "default"。默认是"default". 
 const renderer = new WebGLRenderer({
   canvas: document.querySelector('#canvas-container'),
   antialias: true,
@@ -22,29 +18,8 @@ const renderer = new WebGLRenderer({
 });
 renderer.setSize(width, height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-// .autoClear : Boolean 定义渲染器是否在渲染每一帧之前自动清除其输出。
 renderer.autoClear = true;
-
-/**
- * export enum TextureEncoding {}
- * export const LinearEncoding: TextureEncoding; default
-    export const sRGBEncoding: TextureEncoding;
-    export const GammaEncoding: TextureEncoding;
-    export const RGBEEncoding: TextureEncoding;
-    export const LogLuvEncoding: TextureEncoding;
-    export const RGBM7Encoding: TextureEncoding;
-    export const RGBM16Encoding: TextureEncoding;
-    export const RGBDEncoding: TextureEncoding;
- */
 renderer.outputEncoding = sRGBEncoding;
-
-const renderer2 = new WebGLRenderer({
-  canvas: document.querySelector('#canvas-container-details'),
-  antialias: false
-});
-renderer2.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer2.setSize(width, height);
-renderer2.outputEncoding = sRGBEncoding;
 
 // 初始化场景
 const scene = new Scene();
@@ -52,26 +27,17 @@ const scene = new Scene();
 // 初始化相机
 const cameraGroup = new Group();
 scene.add(cameraGroup);
-const camera = new PerspectiveCamera(35, width / height, 1, 100)
+const camera = new PerspectiveCamera(35, width / height, 1, 1000)
 camera.position.set(19, 1.54, -.1);
 cameraGroup.add(camera);
-// 相机2
-const camera2 = new PerspectiveCamera(35, width / height, 1, 100);
-camera2.position.set(3.2, 2.8, 3.2);
-camera2.rotation.set(0, 1, 0);
-scene.add(camera2);
 
 // 页面缩放事件监听
 window.addEventListener('resize', () => {
   let section = document.getElementsByClassName('section')[0];
   camera.aspect = section.clientWidth / section.clientHeight
   camera.updateProjectionMatrix();
-  camera2.aspect = section.clientWidth / section.clientHeight;
-  camera2.updateProjectionMatrix();
   renderer.setSize(section.clientWidth, section.clientHeight);
-  renderer2.setSize(section.clientWidth, section.clientHeight);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer2.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
 // 直射光
@@ -84,7 +50,7 @@ const fillLight = new PointLight(0x88ffee, 2.7, 4, 3);
 fillLight.position.set(30, 3, 1.8);
 scene.add(fillLight);
 
-// 加载管理
+/******************************************* 模型加载处理 ********************************************/
 const ftsLoader = document.querySelector('.lds-roller'); // loading圈圈
 const loadingCover = document.getElementById('loading-text-intro'); // loading文字
 const loadingManager = new LoadingManager();
@@ -112,6 +78,13 @@ loadingManager.onLoad = () => {
       document.querySelector('.header').classList.add('ended');
       document.querySelector('.description').classList.add('ended');
     });
+
+    // 自旋转
+    new TWEEN.Tween(mesh.rotation)
+        .to({ z: Math.PI * 2 }, 2000) // 设置旋转的目标值和持续时间
+        .easing(TWEEN.Easing.Linear.None) // 设置缓动函数
+        .repeat(Infinity) // 设置重复次数
+        .start(); // 开始动画循环
   ftsLoader.parentNode.removeChild(ftsLoader);
   window.scroll(0, 0)
 }
@@ -124,13 +97,15 @@ dracoLoader.setDecoderConfig({ type: 'js' });
 const loader = new GLTFLoader(loadingManager);
 loader.setDRACOLoader(dracoLoader);
 
+
+var mesh
 // 模型加载
 loader.load('/models/statue.glb', function (gltf) {
   gltf.scene.traverse((obj) => {
     if (obj.isMesh) {
       oldMaterial = obj.material;
-      // MeshPhongMaterial, 一种用于具有镜面高光的光泽表面的材质
       obj.material = new MeshPhongMaterial({ shininess: 100 });
+      mesh = obj
     }
   });
   scene.add(gltf.scene);
@@ -138,6 +113,8 @@ loader.load('/models/statue.glb', function (gltf) {
   oldMaterial.dispose();
   renderer.renderLists.dispose();
 });
+
+/****************************************************************************************************/
 
 // 鼠标移动时添加虚拟光标
 const cursor = { x: 0, y: 0 };
@@ -148,13 +125,8 @@ document.addEventListener('mousemove', event => {
   document.querySelector('.cursor').style.cssText = `left: ${event.clientX}px; top: ${event.clientY}px;`;
 }, false);
 
-// 基于容器视图禁用渲染器
-let secondContainer = false;
-const ob = new IntersectionObserver(payload => {
-    console.log('trigger', payload[0].intersectionRatio)
-    secondContainer = payload[0].intersectionRatio > 0.5;
-}, { threshold: 0.5 });
-ob.observe(document.querySelector('.second'));
+
+
 
 // 页面重绘动画
 const clock = new Clock()
@@ -169,8 +141,10 @@ const tick = () => {
   fillLight.position.x += (parallaxX * 8 - fillLight.position.x) * 2 * deltaTime;
   cameraGroup.position.z -= (parallaxY / 3 + cameraGroup.position.z) * 2 * deltaTime;
   cameraGroup.position.x += (parallaxX / 3 - cameraGroup.position.x) * 2 * deltaTime;
+
+//   mesh && (mesh.rotation.z += Math.random() * .02 * Math.PI);
   TWEEN.update();
-  secondContainer ? renderer2.render(scene, camera2) : renderer.render(scene, camera);
+  renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 tick();
