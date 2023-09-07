@@ -93,3 +93,37 @@ TorusGeometry(radius : Float, tube : Float, radialSegments : Integer, tubularSeg
  */
 IcosahedronGeometry(radius : Float, detail : Integer)
 ```
+
+## 其他基础知识
+1. 模型
+    ```js
+    // 加载.obj模型就用objLoader
+    var loader = new THREE.OBJLoader();
+    loader.load(model, function (object) {
+        /**
+         * 在Three.js中，traverse是一种用于遍历场景图层次结构的方法。它可以应用于任何具有层次结构的Three.js对象，例如场景、组、网格等。
+            traverse方法通过递归地访问每个对象及其子对象来实现遍历。遍历过程中，可以对每个对象执行特定的操作或访问其属性。
+         */
+        object.traverse(function (child) {
+            if (child.isMesh) {
+                // 对模型子网格的一些操作
+            }
+        });
+        scene.add(object);
+    });
+    ```
+2. 贴图
+    ```js
+    const texLoader = new THREE.TextureLoader();
+    loader.load('assets/models/meta.fbx', function (mesh) {
+        mesh.traverse(function (child) {
+            if (child.isMesh) {
+                if (child.name === '需要添加贴图的模型') {
+                    child.material = new THREE.MeshPhysicalMaterial({
+                        map: texLoader.load("./assets/images/metal.png"),
+                    });
+                }
+            }
+        });
+    })
+    ```
