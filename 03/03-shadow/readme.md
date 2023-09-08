@@ -28,3 +28,15 @@ const loader = new THREE.OBJLoader( manager );
 loader.load('file.obj', function (object) {});
 
 ```
+
+# 相机辅助线CameraHelper
+```js
+const cameraHelper = new THREE.CameraHelper(camera)
+scene.add(cameraHelper);
+```
+
+# 坐标系
+```js
+let axes = new THREE.AxesHelper(50); // 50 是坐标系的大小  
+scene.add(axes);  
+```

@@ -1,6 +1,7 @@
 import './style.css';
 import { Clock, Scene, LoadingManager, WebGLRenderer, sRGBEncoding, Group, PerspectiveCamera, DirectionalLight, PointLight, MeshPhongMaterial, AmbientLight } from 'three';
 import { TWEEN } from 'three/examples/jsm/libs/tween.module.min.js';
+import * as THREE from 'three';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
@@ -28,8 +29,43 @@ const scene = new Scene();
 const cameraGroup = new Group();
 scene.add(cameraGroup);
 const camera = new PerspectiveCamera(35, width / height, 1, 1000)
-camera.position.set(19, 1.54, -.1);
+const cameraHelper = new THREE.CameraHelper(camera)
+scene.add(cameraHelper);
 cameraGroup.add(camera);
+
+let axes = new THREE.AxesHelper(50); // 50 是坐标系的大小  
+scene.add(axes);  
+
+// 辅助相机
+const camera1 = new THREE.PerspectiveCamera(50, width / height, 1, 10000)
+camera1.position.set(0, 5, 100)
+camera1.lookAt(0, 0, 0)
+
+let cameraBol = true
+document.querySelector('#cameraBol').addEventListener('click', function () {
+    cameraBol = !cameraBol
+})
+
+{
+    // 地面 平铺
+    const planeSize = 100
+    const loader = new THREE.TextureLoader()
+    const texture = loader.load('https://threejs.org/manual/examples/resources/images/checker.png')
+    texture.wrapS = THREE.RepeatWrapping
+    texture.wrapT = THREE.RepeatWrapping
+    texture.magFilter = THREE.NearestFilter
+    const repeats = planeSize / 2
+    texture.repeat.set(repeats, repeats)
+    const planeGeo = new THREE.PlaneGeometry(planeSize, planeSize)
+    const planeMat = new THREE.MeshPhongMaterial({
+      map: texture,
+      side: THREE.DoubleSide
+    })
+    const mesh = new THREE.Mesh(planeGeo, planeMat)
+    mesh.rotation.x = Math.PI * -0.5
+    scene.add(mesh)
+}
+
 
 // 页面缩放事件监听
 window.addEventListener('resize', () => {
@@ -54,6 +90,14 @@ scene.add(fillLight);
 const ftsLoader = document.querySelector('.lds-roller'); // loading圈圈
 const loadingCover = document.getElementById('loading-text-intro'); // loading文字
 const loadingManager = new LoadingManager();
+
+// 创建网格对象
+const geometry = new THREE.BoxGeometry(1, 1, 1);
+const material = new THREE.MeshBasicMaterial({ color: 0x03c03c });
+const cuboid = new THREE.Mesh(geometry, material);
+scene.add(cuboid);
+
+
 loadingManager.onLoad = () => {
   document.querySelector('.content').style.visibility = 'visible';
   const yPosition = { y: 0 };
@@ -70,7 +114,7 @@ loadingManager.onLoad = () => {
   // 使用Tween给相机添加入场动画
   new TWEEN.Tween(
     camera.position.set(0, 4, 2))
-    .to({ x: 0, y: 2.4, z: 5.8 }, 3500)
+    .to({ x: 0, y: 2.4, z: 10 }, 3500)
     .easing(TWEEN.Easing.Quadratic.InOut)
     .start()
     .onComplete(function () {
@@ -80,7 +124,14 @@ loadingManager.onLoad = () => {
     });
 
     // 自旋转
+    // 神奇了, 这个为什么是z? 模型问题？
     new TWEEN.Tween(mesh.rotation)
+        .to({ z: Math.PI * 2 }, 2000) // 设置旋转的目标值和持续时间
+        .easing(TWEEN.Easing.Linear.None) // 设置缓动函数
+        .repeat(Infinity) // 设置重复次数
+        .start(); // 开始动画循环
+
+    new TWEEN.Tween(cuboid.rotation)
         .to({ z: Math.PI * 2 }, 2000) // 设置旋转的目标值和持续时间
         .easing(TWEEN.Easing.Linear.None) // 设置缓动函数
         .repeat(Infinity) // 设置重复次数
@@ -125,9 +176,6 @@ document.addEventListener('mousemove', event => {
   document.querySelector('.cursor').style.cssText = `left: ${event.clientX}px; top: ${event.clientY}px;`;
 }, false);
 
-
-
-
 // 页面重绘动画
 const clock = new Clock()
 let previousTime = 0;
@@ -141,10 +189,14 @@ const tick = () => {
   fillLight.position.x += (parallaxX * 8 - fillLight.position.x) * 2 * deltaTime;
   cameraGroup.position.z -= (parallaxY / 3 + cameraGroup.position.z) * 2 * deltaTime;
   cameraGroup.position.x += (parallaxX / 3 - cameraGroup.position.x) * 2 * deltaTime;
-
-//   mesh && (mesh.rotation.z += Math.random() * .02 * Math.PI);
   TWEEN.update();
-  renderer.render(scene, camera);
+
+    if (cameraBol) {
+        renderer.render(scene, camera);
+    } else {
+        renderer.render(scene, camera1);
+    }
+  
   requestAnimationFrame(tick);
 }
 tick();
@@ -166,28 +218,3 @@ function animateCamera(position, rotation) {
       TWEEN.remove(this);
     });
 }
-
-// 页面Tab点击事件监听
-document.getElementById('one').addEventListener('click', () => {
-  document.getElementById('one').classList.add('active');
-  document.getElementById('three').classList.remove('active');
-  document.getElementById('two').classList.remove('active');
-  document.getElementById('content').innerHTML = '昨夜西风凋碧树。独上高楼，望尽天涯路。';
-  animateCamera({ x: 3.2, y: 2.8, z: 3.2 }, { y: 1 });
-});
-
-document.getElementById('two').addEventListener('click', () => {
-  document.getElementById('two').classList.add('active');
-  document.getElementById('one').classList.remove('active');
-  document.getElementById('three').classList.remove('active');
-  document.getElementById('content').innerHTML = '衣带渐宽终不悔，为伊消得人憔悴。';
-  animateCamera({ x: -1.4, y: 2.8, z: 4.4 }, { y: -0.1 });
-});
-
-document.getElementById('three').addEventListener('click', () => {
-  document.getElementById('three').classList.add('active');
-  document.getElementById('one').classList.remove('active');
-  document.getElementById('two').classList.remove('active');
-  document.getElementById('content').innerHTML = '众里寻他千百度，蓦然回首，那人却在灯火阑珊处。';
-  animateCamera({ x: -4.8, y: 2.9, z: 3.2 }, { y: -0.75 });
-});
