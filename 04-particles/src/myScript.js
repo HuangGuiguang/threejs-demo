@@ -101,6 +101,7 @@ const createParticlesBySprite = () => {
       for (let y = -10; y < 10; y++) {
         let material = new THREE.SpriteMaterial({
           color: Math.random() * 0xffffff,
+          size: 50,
           wireframe: true,
         //   sizeAttenuation: false
         });
@@ -112,6 +113,8 @@ const createParticlesBySprite = () => {
          */
         let sprite = new THREE.Sprite(material);
         sprite.position.set(x * 4, y * 4, 0);
+        // 通过scale设置x、y、z上的比例
+        sprite.scale.set(3, 3, 3)
         scene.add(sprite);
       }
     }
@@ -287,6 +290,7 @@ const createParticlesByCanvas = () => {
       let veticsFloat32Array = []
       const range = 500
       for (let i = 0; i < 500; i++) {
+        // Vector3该类表示的是一个三维向量
         const particle = new THREE.Vector3(Math.random() * range - range / 2, Math.random() * range - range / 2, Math.random() * range - range / 2)
         veticsFloat32Array.push(particle.x, particle.y, particle.z)
       }
@@ -325,7 +329,7 @@ const createParticlesByGeometry = () => {
     // 创建立方体
     // const sphereGeometry = new THREE.BoxGeometry(15, 15, 15, 10, 10, 10);
     // 分段数决定了粒子的数量
-    const sphereGeometry = new THREE.SphereGeometry(15, 32, 16);
+    const sphereGeometry = new THREE.SphereGeometry(15, 20, 20);
     // 创建粒子材质
     const material = new THREE.PointsMaterial({
       'color': 0xffffff,
@@ -386,6 +390,7 @@ const lostInSpace = () => {
       const randomColor = new THREE.Color(Math.random() * 0xffffff);
       veticsColors.push(randomColor.r, randomColor.g, randomColor.b);
     }
+    console.log(JSON.parse(JSON.stringify(veticsFloat32Array)))
     const vertices = new THREE.Float32BufferAttribute(veticsFloat32Array, 3);
     const colors = new THREE.Float32BufferAttribute(veticsColors, 3);
     geom.attributes.position = vertices;
@@ -419,16 +424,17 @@ const lostInSpace = () => {
     scene.add(light);
     // 更新粒子
     const updateParticles = () => {
-      particleSystem.position.x = 0.2 * Math.cos(t);
-      particleSystem.position.y = 0.2 * Math.cos(t);
-      particleSystem.rotation.z += 0.015; // 150 += 0.015
-      camera.lookAt(particleSystem.position);
+        // cos(t)从0.99逐渐减小-> 也就是星系的x、y逐渐减小 左下
+    //   particleSystem.position.x = 0.2 * Math.cos(t);
+    //   particleSystem.position.y = 0.2 * Math.cos(t);
+
+      particleSystem.rotation.z += 0.015; // 星系绕z轴旋转
+    //   camera.lookAt(particleSystem.position);
       for (let i = 0; i < veticsFloat32Array.length; i++) {
         if ((i + 1) % 3 === 0) { // 更新z轴坐标，所以是每第三个
-            // console.log(JSON.parse(JSON.stringify(veticsFloat32Array[i])))
-          const dist = veticsFloat32Array[i] - camera.position.z; // z是-1500~0
-          if (dist >= 0) veticsFloat32Array[i] = rand(-1000, -500);
-          veticsFloat32Array[i] += 2.5;
+          const dist = veticsFloat32Array[i] - camera.position.z; // z是-1500~0  - 150
+          if (dist >= 0) veticsFloat32Array[i] = rand(-1000, -500); // 超过了摄像机的范围再拉回去
+          veticsFloat32Array[i] += 2.5; // +一点z轴距离达到从远到近的效果
           const _vertices = new THREE.Float32BufferAttribute(veticsFloat32Array, 3);
           geom.attributes.position = _vertices;
         }
